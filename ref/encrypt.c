@@ -24,7 +24,7 @@ static int print_enabled = 0;
 #define DOMAIN_FINAL 0x08
 
 /* Linear transformation matrix */
-static const uint8_t NMNT[8][8] = {
+static const uint8_t ONMNT[8][8] = {
     {  1,    1,    1,    1,    1,    1,    1,    1},
     { 72,   19,   19,   72,    5,   99,   28,  122},
     { 82,   82,    3,  124,   45,   45,  124,    3},
@@ -240,7 +240,7 @@ static void ladybug_permutation_core(State* state, int round_number) {
                 state->x[j] |= (1ULL << (63 - i));
         }
     }
-    linear_transform(state, NMNT);
+    linear_transform(state, ONMNT);
 }
 
 static void ladybug_permutation(State* state, int rounds) {
