@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "api.h"
-#include "crypto_aead.h"
+#include "crypto_aead.h" 
 
 /* Internal Constants and Definitions */
 #define BLOCK_SIZE                8
@@ -24,15 +24,26 @@ static int print_enabled = 0;
 #define DOMAIN_FINAL 0x08
 
 /* Linear transformation matrix */
-static const uint8_t NMNT[8][8] = {
-    {  1,    1,    1,    1,    1,    1,    1,    1},
-    { 72,   19,   19,   72,    5,   99,   28,  122},
-    { 82,   82,    3,  124,   45,   45,  124,    3},
-    { 19,    5,  122,  108,   28,   72,   72,   28},
-    {111,    0,   16,    0,  111,    0,   16,    0},
-    { 19,  122,  122,   19,   28,   55,   72,   99},
-    { 82,   45,    3,    3,   45,   82,  124,  124},
-    { 72,  108,   19,   55,    5,   28,   28,    5}
+static const uint8_t ONMNT[8][8] = {
+    {  1,   1,   1,   1,   1,   1,   1,   1},
+    { 72,  19,  19,  72,   5,  99,  28, 122},
+    { 82,  82,   3, 124,  45,  45, 124,   3},
+    { 19,   5, 122, 108,  28,  72,  72,  28},
+    {111,   0,  16,   0, 111,   0,  16,   0},
+    { 19, 122, 122,  19,  28,  55,  72,  99},
+    { 82,  45,   3,   3,  45,  82, 124, 124},
+    { 72, 108,  19,  55,   5,  28,  28,   5}
+};
+
+static const uint8_t  ONMNT_T[8][8] = {
+	{1,  72,  82,  19,  111,   19,  82,   72},
+	{1,  19,  82,   5,    0,  122,  45,  108},
+	{1,  19,   3, 122,   16,  122,   3,   19},
+	{1,  72, 124, 108,    0,   19,   3,   55},
+	{1,   5,  45,  28,  111,   28,  45,    5},
+	{1,  99,  45,  72,    0,   55,  82,   28},
+	{1,  28, 124,  72,   16,   72, 124,   28},
+	{1, 122,   3,  28,    0,   99, 124,    5}
 };
 
 /* Round Constants */
@@ -58,6 +69,9 @@ static const uint64_t ROUND_CONSTANTS[16] = {
 /* Internal state structure */
 typedef struct {
     uint64_t x[BLOCK_NUMBER];
+
+	// A  pointer to a constant 8x8 array of uint8_t which represents a row of a matrix
+	const uint8_t (*tranform_matrix)[8];
 } State;
 
 /*-------------------------------------------------------------------------
@@ -233,14 +247,35 @@ static void ladybug_permutation_core(State* state, int round_number) {
             bundles[i] |= ((uint32_t)output_bits[j] & 0x1) << j;
         }
     }
-    memset(state->x, 0, sizeof(uint64_t) * BLOCK_NUMBER);
+    memset(state->x, 0, sizeof(uint64_t) * BLOCK_NUMBER);/* Linear transformation matrix */
+static const uint8_t ONMNT[8][8] = {
+    {  1,   1,   1,   1,   1,   1,   1,   1},
+    { 72,  19,  19,  72,   5,  99,  28, 122},
+    { 82,  82,   3, 124,  45,  45, 124,   3},
+    { 19,   5, 122, 108,  28,  72,  72,  28},
+    {111,   0,  16,   0, 111,   0,  16,   0},
+    { 19, 122, 122,  19,  28,  55,  72,  99},
+    { 82,  45,   3,   3,  45,  82, 124, 124},
+    { 72, 108,  19,  55,   5,  28,  28,   5}
+};
+
+static const uint8_t  ONMNT_T[8][8] = {
+        {1,  72,  82,  19,  111,   19,  82,   72},
+        {1,  19,  82,   5,    0,  122,  45,  108},
+        {1,  19,   3, 122,   16,  122,   3,   19},
+        {1,  72, 124, 108,    0,   19,   3,   55},
+        {1,   5,  45,  28,  111,   28,  45,    5},
+        {1,  99,  45,  72,    0,   55,  82,   28},
+        {1,  28, 124,  72,   16,   72, 124,   28},
+        {1, 122,   3,  28,    0,   99, 124,    5}
+};
     for (int i = 0; i < 64; i++) {
         for (int j = 0; j < BLOCK_NUMBER; j++) {
             if (bundles[i] & (1 << j))
                 state->x[j] |= (1ULL << (63 - i));
         }
     }
-    linear_transform(state, NMNT);
+    linear_transform(state, ONMNT);
 }
 
 static void ladybug_permutation(State* state, int rounds) {
