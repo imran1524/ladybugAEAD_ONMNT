@@ -24,7 +24,7 @@ static int print_enabled = 0;
 #define DOMAIN_FINAL 0x08
 
 /* Linear transformation matrix */
-/*
+
 static const uint8_t ONMNT[8][8] = {
     {  1,    1,    1,    1,    1,    1,    1,    1},
     { 82,   82,    3,  124,   45,   45,  124,    3},
@@ -35,8 +35,8 @@ static const uint8_t ONMNT[8][8] = {
     {  0,  111,    0,   16,    0,  111,    0,   16},
     {124,    3,   82,   82,    3,  124,   45,   45}
 };
-*/
 
+/*
 static const uint8_t ONMNT[8][8] = {
 	{  1,   1,   1,   1,    1,    1,   1,   1},
 	{111,   0,  16,   0,  111,    0,  16,   0},
@@ -48,6 +48,7 @@ static const uint8_t ONMNT[8][8] = {
 	{0, 16, 0, 111, 0, 16, 0, 111}
 };
 
+*/
 /* Round Constants */
 static const uint64_t ROUND_CONSTANTS[16] = {
     0x9E3779B97F4A7C15ULL,
@@ -264,7 +265,8 @@ static void ladybug_permutation(State* state, int rounds) {
 
 static void apply_domain_separation(State* state, int rounds, uint8_t domain) {
     state->x[1] ^= domain;
-    ladybug_permutation_core(state, rounds);
+   // ladybug_permutation_core(state, rounds);
+      ladybug_permutation(state, rounds);
 }
 
 /*-------------------------------------------------------------------------
@@ -386,9 +388,12 @@ static void ladybug_process_ciphertext(State *state, int rounds,
         uint64_t pt_block = state->x[0] ^ ct_block;
         uint8_t full_pt[rate];
         store_bytes(pt_block, full_pt, rate);
-        size_t unpadded = remove_padding_block(full_pt, rate);
-        memcpy(plaintext + out_offset, full_pt, unpadded);
-        out_offset += unpadded;
+        //size_t unpadded = remove_padding_block(full_pt, rate);
+        //memcpy(plaintext + out_offset, full_pt, unpadded);
+        //out_offset += unpadded;
+	memcpy(plaintext + out_offset, full_pt, remaining);
+	out_offset += remaining;
+
         state->x[0] = ct_block;
         ladybug_permutation(state, rounds);
     }
