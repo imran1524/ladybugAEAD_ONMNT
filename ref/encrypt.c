@@ -36,19 +36,6 @@ static const uint8_t ONMNT[8][8] = {
     {124,    3,   82,   82,    3,  124,   45,   45}
 };
 
-/*
-static const uint8_t ONMNT[8][8] = {
-	{  1,   1,   1,   1,    1,    1,   1,   1},
-	{111,   0,  16,   0,  111,    0,  16,   0},
-	{  1,  126,  1, 126,    1,  126,   1, 126},
-	{  0,  111,  0,  16,    0,  111,   0,  16},
-	{126,  126, 126, 126, 126,  126, 126, 126},
-	{16, 0, 111, 0, 16, 0, 111, 0},
-	{126, 1, 126, 126, 1, 126, 1},
-	{0, 16, 0, 111, 0, 16, 0, 111}
-};
-
-*/
 /* Round Constants */
 static const uint64_t ROUND_CONSTANTS[16] = {
     0x9E3779B97F4A7C15ULL,
@@ -265,8 +252,8 @@ static void ladybug_permutation(State* state, int rounds) {
 
 static void apply_domain_separation(State* state, int rounds, uint8_t domain) {
     state->x[1] ^= domain;
-   // ladybug_permutation_core(state, rounds);
-      ladybug_permutation(state, rounds);
+    //ladybug_permutation_core(state, rounds);
+    ladybug_permutation(state, rounds);
 }
 
 /*-------------------------------------------------------------------------
@@ -358,10 +345,12 @@ static void ladybug_process_ciphertext(State *state, int rounds,
     size_t rate = LADYBUG_AEAD_RATE;
     size_t out_offset = 0;
     size_t processed = 0;
+
     // Process full blocks
     while (processed + rate <= ct_len) {
         uint64_t ct_block = load_bytes(ciphertext + processed, rate);
         uint64_t pt_block = state->x[0] ^ ct_block;
+
         store_bytes(pt_block, plaintext + out_offset, rate);
         out_offset += rate;
         processed += rate;
@@ -388,11 +377,11 @@ static void ladybug_process_ciphertext(State *state, int rounds,
         uint64_t pt_block = state->x[0] ^ ct_block;
         uint8_t full_pt[rate];
         store_bytes(pt_block, full_pt, rate);
-        //size_t unpadded = remove_padding_block(full_pt, rate);
-        //memcpy(plaintext + out_offset, full_pt, unpadded);
-        //out_offset += unpadded;
-	memcpy(plaintext + out_offset, full_pt, remaining);
-	out_offset += remaining;
+        size_t unpadded = remove_padding_block(full_pt, rate);
+        memcpy(plaintext + out_offset, full_pt, unpadded);
+        out_offset += unpadded;
+	//memcpy(plaintext + out_offset, full_pt, remaining);
+	//out_offset += remaining;
 
         state->x[0] = ct_block;
         ladybug_permutation(state, rounds);
